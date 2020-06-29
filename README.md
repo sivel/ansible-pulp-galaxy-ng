@@ -9,7 +9,7 @@ running `pulp`, `pulp_ansible`, and `galaxy_ng`.
 $ ansible-playbook -v playbook.yml
 ```
 
-Make sure to pay attention to the `debug` outputs at the end of the play.
+Make sure to pay attention to the `debug` outputs at the end of the play. A pre-populated `ansible.cfg` will be created at `{{ playbook_dir }}/out/ansible.cfg`
 
 ### Pre-create namespaces in galaxy_ng
 
