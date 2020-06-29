@@ -1,0 +1,10 @@
+#!/usr/bin/execlineb -S0
+foreground {
+  redirfd -w 1 /dev/null
+  redirfd -w 2 /dev/null
+  export DJANGO_SETTINGS_MODULE pulpcore.app.settings
+  export PULP_CONTENT_ORIGIN localhost
+  s6-setuidgid postgres
+  if { /usr/local/bin/django-admin reset-admin-password --password password }
+  if { /usr/local/bin/pulpcore-manager create-group system:partner-engineers --users admin }
+}

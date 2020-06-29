@@ -1,0 +1,79 @@
+- hosts: localhost
+  gather_subset: min
+  vars:
+    pulp_user: admin
+    pulp_password: password
+  tasks:
+    - command: |
+        {{ ansible_python_interpreter|default(ansible_python.executable) }} -c 'import docker; from six.moves.urllib.parse import urlparse; print(urlparse(docker.from_env().api.base_url).netloc.split(":")[0])'
+      register: docker_host
+
+    - set_fact:
+        pulp_api: http://{{docker_host.stdout}}:8080
+
+    - name: Create tmpdir for later use
+      tempfile:
+        state: directory
+      register: tempfile_result
+
+    - name: Set tmpdir fact
+      set_fact:
+        tmpdir: "{{ tempfile_result.path }}"
+
+    - block:
+        - template:
+            src: settings.py.j2
+            dest: '{{ tmpdir }}/settings.py'
+
+        - community.general.docker_container:
+            name: pulp
+            image: pulp/pulp-galaxy-ng
+            state: stopped
+            ports:
+              - 8080:80
+
+        - command: '{{ item }}'
+          loop:
+            - docker cp {{ tmpdir }}/settings.py pulp:/etc/pulp/settings.py
+            - docker cp {{ playbook_dir }}/files/admin_pass.prep pulp:/etc/cont-init.d/111-postgres
+
+      always:
+        - name: Remove target_tmpdir
+          file:
+            path: "{{ tmpdir }}"
+            state: absent
+
+    - community.general.docker_container:
+        name: pulp
+        state: started
+
+    - include_tasks: tasks/pulp.yml
+
+    - include_tasks: tasks/galaxy_ng.yml
+
+    - file:
+        dest: '{{ playbook_dir }}/out'
+        state: directory
+
+    - template:
+        src: ansible.cfg.j2
+        dest: '{{ playbook_dir }}/out/ansible.cfg'
+
+    - name: pulp username/password
+      debug:
+        msg: "{{ pulp_user }} / {{ pulp_password }}"
+
+    - name: pulp_ansible base url
+      debug:
+        msg: '{{ pulp_api }}/pulp_ansible/galaxy/automation-hub/api/'
+
+    - name: galaxy_ng base url
+      debug:
+        msg: '{{ pulp_api }}/api/galaxy/'
+
+    - name: galaxy_ng token
+      debug:
+        msg: '{{ galaxy_ng_token.json.token }}'
+
+    - debug:
+        msg: See {{ playbook_dir }}/out/ansible.cfg for a pre-built ansible.cfg for this container

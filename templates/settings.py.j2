@@ -1,0 +1,10 @@
+CONTENT_ORIGIN = 'http://{{ docker_host.stdout }}:8080'
+ANSIBLE_API_HOSTNAME = 'http://{{ docker_host.stdout }}:8080'
+ANSIBLE_CONTENT_HOSTNAME = 'http://{{ docker_host.stdout }}:8080/pulp/content'
+TOKEN_AUTH_DISABLED = True
+GALAXY_REQUIRE_CONTENT_APPROVAL = False
+GALAXY_AUTHENTICATION_CLASSES = [
+    "rest_framework.authentication.SessionAuthentication",
+    "rest_framework.authentication.TokenAuthentication",
+    "rest_framework.authentication.BasicAuthentication",
+]
