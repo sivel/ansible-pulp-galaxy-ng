@@ -4,6 +4,17 @@
     pulp_user: admin
     pulp_password: password
   tasks:
+    - name: List existing containers
+      community.general.docker_host_info:
+        containers: true
+        containers_filters:
+          name: pulp-galaxy-ng
+      register: existing_containers
+
+    - fail:
+        msg: "pulp-galaxy-ng container found, not continuing. Manually remove before continuing."
+      when: existing_containers.containers != []
+
     - name: Get docker host
       command: |
         {{ ansible_python_interpreter|default(ansible_python.executable) }} -c 'import docker; from six.moves.urllib.parse import urlparse; print(urlparse(docker.from_env().api.base_url).netloc.split(":")[0])'
@@ -25,7 +36,7 @@
         - name: Template out settings.py
           template:
             src: settings.py.j2
-            dest: '{{ tmpdir }}/settings.py'
+            dest: "{{ tmpdir }}/settings.py"
 
         - name: Create the container, without starting it
           community.general.docker_container:
@@ -36,7 +47,7 @@
               - 8080:80
 
         - name: Copy settings.py and script to set the admin password
-          command: '{{ item }}'
+          command: "{{ item }}"
           loop:
             - docker cp {{ tmpdir }}/settings.py pulp-galaxy-ng:/etc/pulp/settings.py
             - docker cp {{ playbook_dir }}/files/admin_pass.prep pulp-galaxy-ng:/etc/cont-init.d/111-postgres
@@ -66,21 +77,25 @@
         src: ansible.cfg.j2
         dest: '{{ playbook_dir }}/out/ansible.cfg'
 
+    - name: Container root URL
+      debug:
+        msg: "{{ pulp_api }}"
+
     - name: pulp username/password
       debug:
         msg: "{{ pulp_user }} / {{ pulp_password }}"
 
     - name: pulp_ansible base url
       debug:
-        msg: '{{ pulp_api }}/pulp_ansible/galaxy/automation-hub/api/'
+        msg: "{{ pulp_api }}/pulp_ansible/galaxy/automation-hub/api/"
 
     - name: galaxy_ng base url
       debug:
-        msg: '{{ pulp_api }}/api/galaxy/'
+        msg: "{{ pulp_api }}/api/galaxy/"
 
     - name: galaxy_ng token
       debug:
-        msg: '{{ galaxy_ng_token.json.token }}'
+        msg: "{{ galaxy_ng_token.json.token }}"
 
     - name: ansible.cfg
       debug:
