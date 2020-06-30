@@ -4,7 +4,8 @@
     pulp_user: admin
     pulp_password: password
   tasks:
-    - command: |
+    - name: Get docker host
+      command: |
         {{ ansible_python_interpreter|default(ansible_python.executable) }} -c 'import docker; from six.moves.urllib.parse import urlparse; print(urlparse(docker.from_env().api.base_url).netloc.split(":")[0])'
       register: docker_host
 
@@ -21,21 +22,24 @@
         tmpdir: "{{ tempfile_result.path }}"
 
     - block:
-        - template:
+        - name: Template out settings.py
+          template:
             src: settings.py.j2
             dest: '{{ tmpdir }}/settings.py'
 
-        - community.general.docker_container:
-            name: pulp
+        - name: Create the container, without starting it
+          community.general.docker_container:
+            name: pulp-galaxy-ng
             image: pulp/pulp-galaxy-ng
             state: stopped
             ports:
               - 8080:80
 
-        - command: '{{ item }}'
+        - name: Copy settings.py and script to set the admin password
+          command: '{{ item }}'
           loop:
-            - docker cp {{ tmpdir }}/settings.py pulp:/etc/pulp/settings.py
-            - docker cp {{ playbook_dir }}/files/admin_pass.prep pulp:/etc/cont-init.d/111-postgres
+            - docker cp {{ tmpdir }}/settings.py pulp-galaxy-ng:/etc/pulp/settings.py
+            - docker cp {{ playbook_dir }}/files/admin_pass.prep pulp-galaxy-ng:/etc/cont-init.d/111-postgres
 
       always:
         - name: Remove target_tmpdir
@@ -43,19 +47,22 @@
             path: "{{ tmpdir }}"
             state: absent
 
-    - community.general.docker_container:
-        name: pulp
+    - name: Start the container
+      community.general.docker_container:
+        name: pulp-galaxy-ng
         state: started
 
     - include_tasks: tasks/pulp.yml
 
     - include_tasks: tasks/galaxy_ng.yml
 
-    - file:
+    - name: Ensure the output directory exists
+      file:
         dest: '{{ playbook_dir }}/out'
         state: directory
 
-    - template:
+    - name: Template out ansible.cfg file with all galaxy servers
+      template:
         src: ansible.cfg.j2
         dest: '{{ playbook_dir }}/out/ansible.cfg'
 
@@ -75,5 +82,6 @@
       debug:
         msg: '{{ galaxy_ng_token.json.token }}'
 
-    - debug:
+    - name: ansible.cfg
+      debug:
         msg: See {{ playbook_dir }}/out/ansible.cfg for a pre-built ansible.cfg for this container

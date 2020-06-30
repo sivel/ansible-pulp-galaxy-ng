@@ -19,10 +19,10 @@ $ ansible-playbook -v -e '{namespaces: [ns1, ns2]}' playbook.yml
 
 ### Assumptions
 
-1. Running `ansible-base` 2.10+ with the `community.general` collection installed
-1. Running Docker, with env configurations to access the docker container
+1. Running `ansible-base` 2.10+ with the `community.general` collection installed, for access to the `docker` modules.
+1. Running Docker, with env configurations to access the docker server
 1. Python `docker` module installed and available to the playbook python (implicit localhost)
-1. No other containers named `pulp`
+1. No other containers named `pulp-galaxy-ng`
 
 ## Notes
 
