@@ -11,9 +11,10 @@
           name: pulp-galaxy-ng
       register: existing_containers
 
-    - fail:
+    - assert:
+        that:
+          - existing_containers.containers == []
         msg: "pulp-galaxy-ng container found, not continuing. Manually remove before continuing."
-      when: existing_containers.containers != []
 
     - name: Get docker host
       command: |
