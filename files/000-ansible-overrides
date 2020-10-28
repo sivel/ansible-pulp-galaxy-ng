@@ -1,0 +1,13 @@
+#!/usr/bin/execlineb -S0
+
+foreground {
+    sed -i "0,/\"127.0.0.1:24817\"/s//\"0.0.0.0:24817\"/" /etc/services.d/pulpcore-api/run
+}
+
+# This sed calls changes the first occurrence to "allow" which is conveniently the delete operation for a namespace.
+# https://github.com/ansible/galaxy_ng/blob/master/galaxy_ng/app/access_control/statements/standalone.py#L9-L11.
+backtick NG_PREFIX { python -c "import galaxy_ng; print(galaxy_ng.__path__[0], end='')" }
+importas ng_prefix NG_PREFIX
+foreground {
+    sed -i "0,/\"effect\": \"deny\"/s//\"effect\": \"allow\"/" ${ng_prefix}/app/access_control/statements/standalone.py
+}
