@@ -22,7 +22,8 @@
       register: docker_host
 
     - set_fact:
-        pulp_api: http://{{docker_host.stdout}}:8080
+        galaxy_api: http://{{docker_host.stdout}}:8080
+        pulp_api: http://{{docker_host.stdout}}:8081
 
     - name: Create tmpdir for later use
       tempfile:
@@ -46,12 +47,14 @@
             state: stopped
             ports:
               - 8080:80
+              - 8081:24817
 
         - name: Copy settings.py and script to set the admin password
           command: "{{ item }}"
           loop:
             - docker cp {{ tmpdir }}/settings.py pulp-galaxy-ng:/etc/pulp/settings.py
             - docker cp {{ playbook_dir }}/files/admin_pass.prep pulp-galaxy-ng:/etc/cont-init.d/111-postgres
+            - docker cp {{ playbook_dir }}/files/000-ansible-overrides pulp-galaxy-ng:/etc/cont-init.d/000-ansible-overrides
 
       always:
         - name: Remove target_tmpdir
@@ -66,7 +69,18 @@
 
     - include_tasks: tasks/pulp.yml
 
-    - include_tasks: tasks/galaxy_ng.yml
+    - name: Get galaxy_ng token
+      uri:
+        url: '{{ galaxy_api }}/api/galaxy/v3/auth/token/'
+        method: POST
+        body_format: json
+        body: {}
+        status_code:
+          - 200
+        user: '{{ pulp_user }}'
+        password: '{{ pulp_password }}'
+        force_basic_auth: true
+      register: galaxy_ng_token
 
     - name: Ensure the output directory exists
       file:
@@ -88,11 +102,11 @@
 
     - name: pulp_ansible base url
       debug:
-        msg: "{{ pulp_api }}/pulp_ansible/galaxy/automation-hub/api/"
+        msg: "{{ pulp_api }}/pulp_ansible/galaxy/publish/api/"
 
     - name: galaxy_ng base url
       debug:
-        msg: "{{ pulp_api }}/api/galaxy/"
+        msg: "{{ galaxy_api }}/api/galaxy/"
 
     - name: galaxy_ng token
       debug:

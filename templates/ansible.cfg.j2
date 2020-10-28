@@ -2,16 +2,16 @@
 server_list=pulp_v2,pulp_v3,galaxy_ng
 
 [galaxy_server.pulp_v2]
-url={{ pulp_api }}/pulp_ansible/galaxy/automation-hub/api/
+url={{ pulp_api }}/pulp_ansible/galaxy/publish/api/
 username={{ pulp_user }}
 password={{ pulp_password }}
 
 [galaxy_server.pulp_v3]
-url={{ pulp_api }}/pulp_ansible/galaxy/automation-hub/api/
+url={{ pulp_api }}/pulp_ansible/galaxy/publish/api/
 v3=true
 username={{ pulp_user }}
 password={{ pulp_password }}
 
 [galaxy_server.galaxy_ng]
-url={{ pulp_api }}/api/galaxy/
+url={{ galaxy_api }}/api/galaxy/
 token={{ galaxy_ng_token.json.token }}
