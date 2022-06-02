@@ -5,7 +5,7 @@
     pulp_password: password
   tasks:
     - name: List existing containers
-      community.general.docker_host_info:
+      community.docker.docker_host_info:
         containers: true
         containers_filters:
           name: pulp-galaxy-ng
@@ -40,7 +40,7 @@
             dest: "{{ tmpdir }}/settings.py"
 
         - name: Create the container, without starting it
-          community.general.docker_container:
+          community.docker.docker_container:
             name: pulp-galaxy-ng
             image: pulp/pulp-galaxy-ng
             state: stopped
@@ -60,9 +60,11 @@
             state: absent
 
     - name: Start the container
-      community.general.docker_container:
+      community.docker.docker_container:
         name: pulp-galaxy-ng
         state: started
+
+    - meta: end_play
 
     - include_tasks: tasks/pulp.yml
 
