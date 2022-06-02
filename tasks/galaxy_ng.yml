@@ -1,6 +1,6 @@
 - name: Create galaxy_ng namespaces
   uri:
-    url: '{{ pulp_api }}/api/galaxy/v3/_ui/namespaces/'
+    url: '{{ pulp_api }}/api/galaxy/_ui/v1/namespaces/'
     method: POST
     body_format: json
     body:
